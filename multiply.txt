@@ -1,19 +1,19 @@
-JMP main
+    JMP     main
 x:
-0x06
+    0x06
 y:
-0x09
+    0x09
 main:
-LDC r0 0x00     ; Initialize everything
-LDR r1 x
-LDR r2 y
-MOV r3 r0
-JMP check       ; Loop entry check
-loop:           ; Begin loop
-DEC r2
-ADD r3 r1
+    LDC     r0 0x00     ; Initialize everything
+    LDR     r1 x
+    LDR     r2 y
+    MOV     r3 r0
+    JMP     check       ; Loop entry check
+loop:                   ; Begin loop
+    DEC     r2
+    ADD     r3 r1
 check:
-CMP r2 r0       ; Loop guard
-JGT loop
-STR r3 0xFF
-END
+    CMP     r2 r0       ; Loop guard
+    JGT     loop
+    STR     r3 0xFF
+    END

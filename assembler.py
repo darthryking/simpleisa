@@ -12,6 +12,8 @@ import sys
 
 __version__ = '0.0.0'
 
+HEADER = "******* SIMPLE-ISA Assembler *******\n"
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 INSTRUCTIONS_DICT = {
@@ -94,8 +96,8 @@ class IllegalToken(AssemblerError):
         
         
 def error(msg):
-    sys.stderr.write("{}\n".format(msg))
-    raw_input("Press [ENTER] to continue...")
+    sys.stderr.write("ERROR: {}\n".format(msg))
+    raw_input("\nPress [ENTER] to continue...")
     return 1
     
     
@@ -245,17 +247,21 @@ def hex_from_tokens(tokens):
     if unknownLabelDict:
         raise Execption('Missing labels: {}'.format(unknownLabelDict.keys()))
         
+    if len(result) > 256:
+        raise AssemblerError(
+                "Program too large for memory! ({}/256 bytes)"
+                    .format(len(result))
+            )
+            
     return ' '.join(result).replace('\n ', '\n').strip()
     
     
 def bytes_from_hex(hexcode):
-    bytecode = [chr(int(code, 16)) for code in hexcode.split()]
+    return ''.join(chr(int(code, 16)) for code in hexcode.split())
     
-    # Pad to 256 bytes
-    while len(bytecode) < 256:
-        bytecode.append('\x00')
-        
-    return ''.join(bytecode)
+    
+def pad_program(bytecode):
+    return bytecode + '\x00' * (256 - len(bytecode))
     
     
 def get_filename(filePath):
@@ -268,35 +274,58 @@ def main(argv):
         
     filePath = argv[1]
     
+    print HEADER
+    
+    print "Reading {}...".format(os.path.basename(filePath))
+    
     with open(filePath, 'r') as f:
         data = f.read()
         
     tokens = tokenize(data)
+    
+    print ""
+    print "Translating to hex..."
     
     try:
         hexcode = hex_from_tokens(tokens)
     except StopIteration:
         return error("Unexpected end of file!")
         
+    print "Translating to binary..."
     bytecode = bytes_from_hex(hexcode)
+    
+    print "\t* Final program size: {}/256 bytes".format(len(bytecode))
+    print ""
+    
+    # Pad the bytecode with zeros to the maximum memory size.
+    print "Padding memory..."
+    bytecode = pad_program(bytecode)
+    
+    print ""
     
     hexfileName = '{}.hex'.format(get_filename(filePath))
     hexfilePath = os.path.join(HERE, hexfileName)
     
     binfilePath = os.path.join(HERE, 'memory.bin')
     
+    print "Writing {}...".format(hexfileName)
     with open(hexfilePath, 'w') as f:
         f.write(hexcode)
         
+    print "Writing {}...".format('memory.bin')
     with open(binfilePath, 'wb') as f:
         f.write(bytecode)
         
+    print ""
+    print "Done!"
+    raw_input("\nPress [ENTER] to continue...")
+    
     return 0
     
     
 if __name__ == '__main__':
     try:
         sys.exit(main(sys.argv))
-    except Exception as e:
+    except AssemblerError as e:
         sys.exit(error(str(e)))
         
