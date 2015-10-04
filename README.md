@@ -1,2 +1,2 @@
-# simpleisa
-Assembler and simulator for a simple ISA that I made up.
+# SIMPLE-ISA
+Assembler and simulator for a very simple assembly language that I made up.
