@@ -7,9 +7,12 @@ An assembler for a very simple assembly language that I made up.
 
 """
 
+import os
 import sys
 
 __version__ = '0.0.0'
+
+HERE = os.path.dirname(os.path.abspath(__file__))
 
 INSTRUCTIONS_DICT = {
     # Misc
@@ -245,13 +248,27 @@ def hex_from_tokens(tokens):
     return ' '.join(result).replace('\n ', '\n').strip()
     
     
+def bytes_from_hex(hexcode):
+    bytecode = [chr(int(code, 16)) for code in hexcode.split()]
+    
+    # Pad to 256 bytes
+    while len(bytecode) < 256:
+        bytecode.append('\x00')
+        
+    return ''.join(bytecode)
+    
+    
+def get_filename(filePath):
+    return os.path.basename(filePath).split('.', 1)[0]
+    
+    
 def main(argv):
     if len(argv) != 2:
         return error("Must provide at least one file!")
         
-    filepath = argv[1]
+    filePath = argv[1]
     
-    with open(filepath, 'r') as f:
+    with open(filePath, 'r') as f:
         data = f.read()
         
     tokens = tokenize(data)
@@ -261,15 +278,25 @@ def main(argv):
     except StopIteration:
         return error("Unexpected end of file!")
         
-    print hexcode
-    # bytecode = bytes_from_hex(hexcode)
+    bytecode = bytes_from_hex(hexcode)
     
+    hexfileName = '{}.hex'.format(get_filename(filePath))
+    hexfilePath = os.path.join(HERE, hexfileName)
+    
+    binfilePath = os.path.join(HERE, 'memory.bin')
+    
+    with open(hexfilePath, 'w') as f:
+        f.write(hexcode)
+        
+    with open(binfilePath, 'wb') as f:
+        f.write(bytecode)
+        
     return 0
     
     
 if __name__ == '__main__':
     try:
         sys.exit(main(sys.argv))
-    except AssemblerError as e:
+    except Exception as e:
         sys.exit(error(str(e)))
         
