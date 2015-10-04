@@ -10,40 +10,46 @@ An assembler for a very simple assembly language that I made up.
 import os
 import sys
 
+from constants import FROZEN, Op
+
 __version__ = '0.0.0'
 
 HEADER = "******* SIMPLE-ISA Assembler *******\n"
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-
+if FROZEN:
+    HERE = os.path.dirname(sys.executable)
+else:
+    HERE = os.path.dirname(os.path.abspath(__file__))
+    
+    
 INSTRUCTIONS_DICT = {
     # Misc
-    'NOP'   :   0x00,
-    'END'   :   0xFF,
+    'NOP'   :   Op.NOP,
+    'END'   :   Op.END,
     
     # Data Manipulation
-    'MOV'   :   0xD0,
-    'STR'   :   0xD1,
-    'LDR'   :   0xD2,
-    'LDC'   :   0xD3,
+    'MOV'   :   Op.MOV,
+    'STR'   :   Op.STR,
+    'LDR'   :   Op.LDR,
+    'LDC'   :   Op.LDC,
     
     # Arithmetic
-    'INC'   :   0xA0,
-    'DEC'   :   0xA1,
-    'NEG'   :   0xA2,
-    'ADD'   :   0xA3,
-    'SUB'   :   0xA4,
-    'AND'   :   0xA5,
-    'OR'    :   0xA6,
-    'CMP'   :   0xA7,
+    'INC'   :   Op.INC,
+    'DEC'   :   Op.DEC,
+    'NEG'   :   Op.NEG,
+    'ADD'   :   Op.ADD,
+    'SUB'   :   Op.SUB,
+    'AND'   :   Op.AND,
+    'OR'    :   Op.OR,
+    'CMP'   :   Op.CMP,
     
     # Jumps
-    'JMP'   :   0xB0,
-    'JLT'   :   0xB1,
-    'JGT'   :   0xB2,
-    'JUL'   :   0xB3,
-    'JUG'   :   0xB4,
-    'JEQ'   :   0xB5,
+    'JMP'   :   Op.JMP,
+    'JLT'   :   Op.JLT,
+    'JGT'   :   Op.JGT,
+    'JUL'   :   Op.JUL,
+    'JUG'   :   Op.JUG,
+    'JEQ'   :   Op.JEQ,
     
 }
 
