@@ -47,6 +47,7 @@ INSTRUCTIONS_DICT = {
     
 }
 
+# Instructions of the form: OP r#
 SINGLE_REG_INSTRUCTIONS = set(
         (
             'INC',
@@ -55,6 +56,7 @@ SINGLE_REG_INSTRUCTIONS = set(
         )
     )
     
+# Instructions of the form: OP rA rB
 DOUBLE_REG_INSTRUCTIONS = set(
         (
             'MOV',
@@ -66,6 +68,7 @@ DOUBLE_REG_INSTRUCTIONS = set(
         )
     )
     
+# Instructions of the form: OP r# 0x##
 REG_CONSTANT_INSTRUCTIONS = set(
         (
             'STR',
@@ -74,6 +77,7 @@ REG_CONSTANT_INSTRUCTIONS = set(
         )
     )
     
+# Instructions of the form: OP 0x##
 CONSTANT_INSTRUCTIONS = set(
         (
             'JMP',
@@ -87,32 +91,45 @@ CONSTANT_INSTRUCTIONS = set(
     
     
 class AssemblerError(Exception):
+    """ The assembler can't assemble the given code. """
     pass
     
     
 class IllegalToken(AssemblerError):
+    """ There's a bad token in the given code. """
+    
     def __str__(self):
         return "Illegal token: '{}'".format(self.message)
         
         
 def error(msg):
+    """ Something screwed up. :( """
     sys.stderr.write("ERROR: {}\n".format(msg))
     raw_input("\nPress [ENTER] to continue...")
     return 1
     
     
 def tokenize(data):
+    """ Returns an iterator over all the language tokens in the given assembly 
+    language data.
+    
+    """
+    
     for line in data.split('\n'):
         for item in line.split(';', 1)[0].strip().split():
             yield item
             
             
 def hex_from_int(n):
+    """ Gives the 2-digit hexadecimal representation of an integer. """
     return '0x{:0>2}'.format(hex(n)[2:].upper())
     
     
 def hex_from_tokens(tokens):
-    """ Converts a stream of tokens into a human-readable hex string. """
+    """ Converts a stream of tokens into a human-readable whitespace-delimited 
+    hex string.
+    
+    """
     
     tokens = iter(tokens)
     
@@ -126,9 +143,12 @@ def hex_from_tokens(tokens):
     i = 0
     
     def get_register_num(register):
+        """ Extracts the register number from a register token. """
         return int(register[1:])
         
     def is_register(register):
+        """ Determines whether the given token is a register token. """
+        
         if not register.startswith('r'):
             return False
             
@@ -143,6 +163,16 @@ def hex_from_tokens(tokens):
         return True
         
     def get_constant(token):
+        """ Helper that interprets the given token as a constant number, and 
+        adds it to the results list as such.
+        
+        If the token is a label reference, this helper function either adds a 
+        placeholder value to the results list and records its location, or, if 
+        the label is known, translates the label into its respective constant 
+        value and adds that constant to the results list.
+        
+        """
+        
         if token.startswith('0x'):
             try:
                 value = int(token, 16)
@@ -176,6 +206,7 @@ def hex_from_tokens(tokens):
             address = i % 256
             labelDict[label] = address
             
+            # Fill in all prior placeholder references to this label, if any.
             if label in unknownLabelDict:
                 for index in unknownLabelDict[label]:
                     result[index] = '{}\n'.format(hex_from_int(address))
@@ -257,14 +288,22 @@ def hex_from_tokens(tokens):
     
     
 def bytes_from_hex(hexcode):
+    """ Given a valid string of whitespace-delimited hexadecimal numbers, 
+    returns those hex numbers translated into byte string form.
+    
+    """
+    
     return ''.join(chr(int(code, 16)) for code in hexcode.split())
     
     
 def pad_program(bytecode):
+    """ Returns bytecode padded with zeros to a length of 256. """
     return bytecode + '\x00' * (256 - len(bytecode))
     
     
 def get_filename(filePath):
+    """ Given the path to a file, gives the filename without its extension.
+    """
     return os.path.basename(filePath).split('.', 1)[0]
     
     
