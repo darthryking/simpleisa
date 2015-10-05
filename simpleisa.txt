@@ -6,19 +6,20 @@ END                     0xFF
 
 Data Manipulation:
 MOV rA rB               0xD0
-STR rA                  0xD1
-LDR rA                  0xD2
+STR rA 0x##             0xD1
+LDR rA 0x##             0xD2
 LDC rA 0x##             0xD3
 
 Arithmetic:
 INC rA                  0xA0
 DEC rA                  0xA1
 NEG rA                  0xA2
-ADD rA rB               0xA3
-SUB rA rB               0xA4
-AND rA rB               0xA5
-OR  rA rB               0xA6
-CMP rA rB               0xA7
+BCM rA                  0xA3
+ADD rA rB               0xA4
+SUB rA rB               0xA5
+AND rA rB               0xA6
+OR  rA rB               0xA7
+CMP rA rB               0xA8
 
 Jumps:
 JMP 0x##                0xB0
@@ -63,8 +64,8 @@ END
 0xD0 0x30           ; MOV r3 r0
 0xB0 0x15           ; JMP check
 0xA1 0x20           ; DEC r2            <-- loop
-0xA5 0x31           ; ADD r3 r1
-0xA7 0x20           ; CMP r2 r0         <-- check
+0xA4 0x31           ; ADD r3 r1
+0xA8 0x20           ; CMP r2 r0         <-- check
 0xB2 0x11           ; JGT loop
 0xD1 0x30 0xFF      ; STR r3 0xFF
 0xFF                ; END
@@ -72,5 +73,5 @@ END
 
 == Compiled ==
 
-B0 04 06 09 D3 00 00 D2 10 02 D2 20 03 D0 30 B0 15 A1 20 A5 31 A7 20 B2 11 D1 30 FF FF
+B0 04 06 09 D3 00 00 D2 10 02 D2 20 03 D0 30 B0 15 A1 20 A4 31 A8 20 B2 11 D1 30 FF FF
 

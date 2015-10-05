@@ -314,13 +314,13 @@ def get_filename(filePath):
     
     
 def main(argv):
-    if len(argv) != 2:
-        return error("Must provide at least one file!")
-        
-    filePath = argv[1]
-    
     print HEADER
     
+    try:
+        filePath = argv[1]
+    except IndexError:
+        return error("Must provide a source file!")
+        
     print "Reading {}...".format(os.path.basename(filePath))
     
     with open(filePath, 'r') as f:
