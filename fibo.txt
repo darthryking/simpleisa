@@ -1,0 +1,44 @@
+    LDC     r0 results      ; r0 -- Current value of n
+    
+    LDC     r13 0x0D        ; r13 -- Always at index 13
+    ADD     r13 r0
+    
+    INC     r0              ; Move r0 to index 2
+    INC     r0
+    
+loop:
+    CMP     r0 r13
+    JEQ     done
+    
+    MOV     r3 r0
+    DEC     r3              ; r3 -- n - 1
+    LDM     r1 r3           ; r1 -- fibo(n - 1)
+    
+    DEC     r3              ; r3 -- n - 2
+    LDM     r2 r3           ; r2 -- fibo(n - 2)
+    
+    ADD     r1 r2           ; r1 -- fibo(n)
+    STM     r1 r0           ; results[n] = fibo(n)
+    
+    INC     r0
+    
+    JMP     loop
+    
+done:
+    END
+    
+results:
+    0x01
+    0x01
+    0x00
+    0x00
+    0x00
+    0x00
+    0x00
+    0x00
+    0x00
+    0x00
+    0x00
+    0x00
+    0x00
+    

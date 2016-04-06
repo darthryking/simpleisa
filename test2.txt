@@ -1,0 +1,19 @@
+    LDC     r0 0xF0
+    
+    LDC     r1 0xDE
+    STM     r1 r0
+    INC     r0
+    
+    LDC     r1 0xAD
+    STM     r1 r0
+    INC     r0
+    
+    LDC     r1 0xBE
+    STM     r1 r0
+    INC     r0
+    
+    LDC     r1 0xEF
+    STM     r1 r0
+    
+    END
+    

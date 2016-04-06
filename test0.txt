@@ -1,0 +1,6 @@
+    LDC     r0 0xDE
+    LDC     r1 0xAD
+    LDC     r2 0xBE
+    LDC     r3 0xEF
+    END
+    

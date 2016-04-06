@@ -1,0 +1,9 @@
+    LDC     r0 0x01
+    LDC     r1 0x02
+    ADD     r0 r1
+    LDC     r2 0x0A
+    INC     r2
+    MOV     r3 r2
+    DEC     r3
+    END
+    

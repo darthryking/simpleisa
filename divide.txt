@@ -1,0 +1,54 @@
+    JMP     main
+    
+x:
+    0x47
+y:
+    0x0d
+    
+main:
+    LDC     r0 0x00         ; r0 -- Always zero
+    
+    LDC     r2 y
+    LDM     r2 r2           ; r2 -- Denominator
+    
+    CMP     r2 r0           ; Check for division by zero
+    JUG     noerror         ; Skip error routine if denominator is not zero
+    
+    LDC     r3 0xFF         ; Error -- Divide by zero
+    LDC     r10 error
+    STM     r3 r10          ; Store error code to the "error" address
+    END                     ; Halt program with error
+    
+noerror:
+    LDC     r1 x
+    LDM     r1 r1           ; r1 -- Numerator
+    
+    MOV     r3 r0           ; r3 -- Accumulator
+    
+loop:
+    CMP     r1 r2
+    JSL     done
+    
+    SUB     r1 r2
+    INC     r3
+    
+    JMP     loop
+    
+done:
+    LDC     r10 result      ; r10 -- Address Register
+    STM     r3 r10
+    
+    LDC     r10 remainder
+    STM     r1 r10
+    
+    END
+    
+result:
+    0x00
+    
+remainder:
+    0x00
+    
+error:
+    0x00
+    

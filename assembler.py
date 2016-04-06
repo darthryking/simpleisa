@@ -10,7 +10,7 @@ An assembler for a very simple assembly language that I made up.
 import os
 import sys
 
-from constants import FROZEN, Op
+from constants import FROZEN, Op, Instr
 
 __version__ = '0.0.0'
 
@@ -20,80 +20,6 @@ if FROZEN:
     HERE = os.path.dirname(sys.executable)
 else:
     HERE = os.path.dirname(os.path.abspath(__file__))
-    
-    
-INSTRUCTIONS_DICT = {
-    # Misc
-    'NOP'   :   Op.NOP,
-    'END'   :   Op.END,
-    
-    # Data Manipulation
-    'MOV'   :   Op.MOV,
-    'STR'   :   Op.STR,
-    'LDR'   :   Op.LDR,
-    'LDC'   :   Op.LDC,
-    
-    # Arithmetic
-    'INC'   :   Op.INC,
-    'DEC'   :   Op.DEC,
-    'NEG'   :   Op.NEG,
-    'ADD'   :   Op.ADD,
-    'SUB'   :   Op.SUB,
-    'AND'   :   Op.AND,
-    'OR'    :   Op.OR,
-    'CMP'   :   Op.CMP,
-    
-    # Jumps
-    'JMP'   :   Op.JMP,
-    'JLT'   :   Op.JLT,
-    'JGT'   :   Op.JGT,
-    'JUL'   :   Op.JUL,
-    'JUG'   :   Op.JUG,
-    'JEQ'   :   Op.JEQ,
-    
-}
-
-# Instructions of the form: OP r#
-SINGLE_REG_INSTRUCTIONS = set(
-        (
-            'INC',
-            'DEC',
-            'NEG',
-        )
-    )
-    
-# Instructions of the form: OP rA rB
-DOUBLE_REG_INSTRUCTIONS = set(
-        (
-            'MOV',
-            'ADD',
-            'SUB',
-            'AND',
-            'OR',
-            'CMP',
-        )
-    )
-    
-# Instructions of the form: OP r# 0x##
-REG_CONSTANT_INSTRUCTIONS = set(
-        (
-            'STR',
-            'LDR',
-            'LDC',
-        )
-    )
-    
-# Instructions of the form: OP 0x##
-CONSTANT_INSTRUCTIONS = set(
-        (
-            'JMP',
-            'JLT',
-            'JGT',
-            'JUL',
-            'JUG',
-            'JEQ',
-        )
-    )
     
     
 class AssemblerError(Exception):
@@ -146,7 +72,7 @@ def hex_from_tokens(tokens):
     unknownLabelDict = {}
     
     result = []
-    i = 0
+    i = 0           # Index of the current memory location.
     
     def get_register_num(register):
         """ Extracts the register number from a register token. """
@@ -163,7 +89,7 @@ def hex_from_tokens(tokens):
         except ValueError:
             return False
             
-        if not (0 <= registerNumber < 8):
+        if not (0 <= registerNumber < 16):
             return False
             
         return True
@@ -209,7 +135,7 @@ def hex_from_tokens(tokens):
         # Label
         if token.endswith(':') and not token.startswith('0x'):
             label = token[:-1]
-            address = i % 256
+            address = i
             labelDict[label] = address
             
             # Fill in all prior placeholder references to this label, if any.
@@ -219,18 +145,13 @@ def hex_from_tokens(tokens):
                     
                 del unknownLabelDict[label]
                 
-        # Constant
-        elif token.startswith('0x'):
-            get_constant(token)
-            i += 1
-            
         # Instruction
-        elif token in INSTRUCTIONS_DICT:
-            value = INSTRUCTIONS_DICT[token]
+        elif token in Instr.ALL:
+            value = Instr.ALL[token]
             result.append(hex_from_int(value))
             i += 1
             
-            if token in SINGLE_REG_INSTRUCTIONS:
+            if token in Instr.REG:
                 register = next(tokens)
                 
                 if not is_register(register):
@@ -238,10 +159,10 @@ def hex_from_tokens(tokens):
                     
                 regNum = get_register_num(register)
                 
-                result.append('0x{}0\n'.format(regNum))
+                result.append('0x{:1x}0\n'.format(regNum))
                 i += 1
                 
-            elif token in DOUBLE_REG_INSTRUCTIONS:
+            elif token in Instr.REG_REG:
                 register1 = next(tokens)
                 register2 = next(tokens)
                 
@@ -254,10 +175,10 @@ def hex_from_tokens(tokens):
                 upper = get_register_num(register1)
                 lower = get_register_num(register2)
                 
-                result.append('0x{}{}\n'.format(upper, lower))
+                result.append('0x{:1x}{:1x}\n'.format(upper, lower))
                 i += 1
                 
-            elif token in REG_CONSTANT_INSTRUCTIONS:
+            elif token in Instr.REG_CONST:
                 register = next(tokens)
                 
                 if not is_register(register):
@@ -265,24 +186,26 @@ def hex_from_tokens(tokens):
                     
                 regNum = get_register_num(register)
                 
-                result.append('0x{}0'.format(regNum))
+                result.append('0x{:1x}0'.format(regNum))
+                i += 1
+                
                 get_constant(next(tokens))
+                i += 1
                 
-                i += 2
-                
-            elif token in CONSTANT_INSTRUCTIONS:
+            elif token in Instr.CONST:
                 get_constant(next(tokens))
                 i += 1
                 
             else:
                 result[-1] += '\n'
                 
-        # Illegal token
+        # Assume everything else to be a constant or label reference.
         else:
-            raise IllegalToken(token)
+            get_constant(token)
+            i += 1
             
     if unknownLabelDict:
-        raise Execption('Missing labels: {}'.format(unknownLabelDict.keys()))
+        raise Exception('Missing labels: {}'.format(unknownLabelDict.keys()))
         
     if len(result) > 256:
         raise AssemblerError(

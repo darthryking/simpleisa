@@ -70,7 +70,7 @@ def main(argv):
     except InvalidFile as e:
         return error(str(e))
         
-    registers = [0] * 8
+    registers = RegFile([0] * 15)
     pc = 0
     
     class Flags:
@@ -122,22 +122,6 @@ def main(argv):
             registers[regA] = registers[regB]
             pc += 2
             
-        elif op == Op.STR:
-            reg, _ = get_regs(memory[pc + 1])
-            addr = memory[pc + 2]
-            
-            memory[addr] = registers[reg]
-            
-            pc += 3
-            
-        elif op == Op.LDR:
-            reg, _ = get_regs(memory[pc + 1])
-            addr = memory[pc + 2]
-            
-            registers[reg] = memory[addr]
-            
-            pc += 3
-            
         elif op == Op.LDC:
             reg, _ = get_regs(memory[pc + 1])
             const = memory[pc + 2]
@@ -145,6 +129,16 @@ def main(argv):
             registers[reg] = const
             
             pc += 3
+            
+        elif op == Op.LDM:
+            regA, regB = get_regs(memory[pc + 1])
+            registers[regA] = memory[registers[regB]]
+            pc += 2
+            
+        elif op == Op.STM:
+            regA, regB = get_regs(memory[pc + 1])
+            memory[registers[regB]] = registers[regA]
+            pc += 2
             
         elif op == Op.INC:
             reg, _ = get_regs(memory[pc + 1])
@@ -184,6 +178,39 @@ def main(argv):
             
             a = registers[reg]
             result = ~a
+            registers[reg] = result
+            
+            Flags.update(op, a, result)
+            
+            pc += 2
+            
+        elif op == Op.USR:
+            reg, _ = get_regs(memory[pc + 1])
+            
+            a = registers[reg]
+            result = (a >> 1) & 0x7F
+            registers[reg] = result
+            
+            Flags.update(op, a, result)
+            
+            pc += 2
+            
+        elif op == Op.SSR:
+            reg, _ = get_regs(memory[pc + 1])
+            
+            a = registers[reg]
+            result = (a >> 1) | (a & 0x80)
+            registers[reg] = result
+            
+            Flags.update(op, a, result)
+            
+            pc += 2
+            
+        elif op == Op.USL:
+            reg, _ = get_regs(memory[pc + 1])
+            
+            a = registers[reg]
+            result = a << 1
             registers[reg] = result
             
             Flags.update(op, a, result)
@@ -247,14 +274,8 @@ def main(argv):
         elif op == Op.JMP:
             pc = memory[pc + 1]
             
-        elif op == Op.JLT:
-            if Flags.negative != Flags.overflow:
-                pc = memory[pc + 1]
-            else:
-                pc += 2
-                
-        elif op == Op.JGT:
-            if not Flags.zero and Flags.negative == Flags.overflow:
+        elif op == Op.JEQ:
+            if Flags.zero:
                 pc = memory[pc + 1]
             else:
                 pc += 2
@@ -271,26 +292,50 @@ def main(argv):
             else:
                 pc += 2
                 
-        elif op == Op.JEQ:
-            if Flags.zero:
+        elif op == Op.JSL:
+            if Flags.negative != Flags.overflow:
                 pc = memory[pc + 1]
             else:
                 pc += 2
                 
+        elif op == Op.JSG:
+            if not Flags.zero and Flags.negative == Flags.overflow:
+                pc = memory[pc + 1]
+            else:
+                pc += 2
+                
+        else:
+            raise Exception("Invalid instruction!")
+            
         pc %= 256
         
     print "Done!"
     
+    print "Memory dump:"
+    print [hex(b) for b in memory]
+    
     while 1:
         addrIn = raw_input("Examine address: ")
         
-        if addrIn.lower() == 'done':
+        if addrIn.lower() in ('done', 'exit', 'quit'):
             break
             
-        addr = int(addrIn, 16)
-        
-        print "Contents of {}: {}".format(hex(addr), hex(memory[addr]))
-        
+        try:
+            addr = int(addrIn, 16)
+        except ValueError:
+            sys.stderr.write("Invalid address.\n")
+            continue
+            
+        try:
+            contents = memory[addr]
+        except IndexError:
+            sys.stderr.write("Invalid address.\n")
+            continue
+            
+        print "Contents of {}: {} ({}_d)".format(
+                hex(addr), hex(contents), contents
+            )
+            
     return 0
     
     

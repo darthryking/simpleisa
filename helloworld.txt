@@ -1,0 +1,53 @@
+    LDC     r15 0xF0    ; Buffer start
+    
+    LDC     r10 0x48    ; ASCII 'H'
+    STM     r10 r15
+    INC     r15
+    
+    LDC     r10 0x65    ; ASCII 'e'
+    STM     r10 r15
+    INC     r15
+    
+    LDC     r10 0x6C    ; ASCII 'l'
+    STM     r10 r15
+    INC     r15
+    STM     r10 r15
+    INC     r15
+    
+    LDC     r10 0x6F    ; ASCII 'o'
+    STM     r10 r15
+    INC     r15
+    
+    LDC     r10 0x54    ; ASCII ','
+    STM     r10 r15
+    INC     r15
+    
+    LDC     r10 0x20    ; ASCII ' '
+    STM     r10 r15
+    INC     r15
+    
+    LDC     r10 0x77    ; ASCII 'w'
+    STM     r10 r15
+    INC     r15
+    
+    LDC     r10 0x6F    ; ASCII 'o'
+    STM     r10 r15
+    INC     r15
+    
+    LDC     r10 0x72    ; ASCII 'r'
+    STM     r10 r15
+    INC     r15
+    
+    LDC     r10 0x6C    ; ASCII 'l'
+    STM     r10 r15
+    INC     r15
+    
+    LDC     r10 0x64    ; ASCII 'd'
+    STM     r10 r15
+    INC     r15
+    
+    LDC     r10 0x21    ; ASCII '!'
+    STM     r10 r15
+    
+    END
+    

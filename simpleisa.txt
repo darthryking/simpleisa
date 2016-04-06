@@ -1,33 +1,36 @@
-== SIMPLE -- Simplistic Instruction Machine Programming Language Execution ==
+== SIMPL -- Simplistic Instruction Machine Programming Language ==
 
 Misc:
-NOP                     0x00
-END                     0xFF
+NOP                     0x00    N/A
+END                     0xFF    Halt
 
 Data Manipulation:
-MOV rA rB               0xD0
-STR rA 0x##             0xD1
-LDR rA 0x##             0xD2
-LDC rA 0x##             0xD3
+MOV rA rB               0xD0    rA <= rB
+LDC rA 0x##             0xD1    rA <= 0x##
+LDM rA rB               0xD2    rA <= M[rB]
+STM rA rB               0xD3    M[rB] <= rA
 
 Arithmetic:
-INC rA                  0xA0
-DEC rA                  0xA1
-NEG rA                  0xA2
-BCM rA                  0xA3
-ADD rA rB               0xA4
-SUB rA rB               0xA5
-AND rA rB               0xA6
-OR  rA rB               0xA7
-CMP rA rB               0xA8
+INC rA                  0xA0    rA <= rA + 1
+DEC rA                  0xA1    rA <= rA - 1
+NEG rA                  0xA2    rA <= -rA
+BCM rA                  0xA3    rA <= ~rA
+USR rA                  0xA4    rA <= rA >> 1
+SSR rA                  0xA5    rA <= rA >> 1
+USL rA                  0xA6    rA <= rA << 1
+ADD rA rB               0xA7    rA <= rA + rB
+SUB rA rB               0xA8    rA <= rA - rB
+AND rA rB               0xA9    rA <= rA & rB
+OR  rA rB               0xAA    rA <= rA | rB
+CMP rA rB               0xAB    Check rA - rB, Set Flags
 
 Jumps:
-JMP 0x##                0xB0
-JLT 0x##                0xB1
-JGT 0x##                0xB2
-JUL 0x##                0xB3
-JUG 0x##                0xB4
-JEQ 0x##                0xB5
+JMP 0x##                0xB0    PC <= 0x##
+JEQ 0x##                0xB1    PC <= 0x## if Z
+JUL 0x##                0xB2    PC <= 0x## if C
+JUG 0x##                0xB3    PC <= 0x## if ~C&~Z
+JSL 0x##                0xB4    PC <= 0x## if N^V
+JSG 0x##                0xB5    PC <= 0x## if ~Z&~(N^V)
 
 
 == Example ==
@@ -39,8 +42,10 @@ y:
 0x09
 main:
 LDC r0 0x00
-LDR r1 x
-LDR r2 y
+LDC r1 x
+LDM r1 r1
+LDC r2 y
+LDM r2 r2
 MOV r3 r0
 JMP check
 loop:
@@ -49,7 +54,8 @@ ADD r3 r1
 check:
 CMP r2 r0
 JGT loop
-STR r3 0xFF
+LDC r4 0xFF
+STM r3 r4
 END
 
 
@@ -59,19 +65,206 @@ END
 0x06                                    <-- x            
 0x09                                    <-- y
 0xD3 0x00 0x00      ; LDC r0 0x00       <-- main
-0xD2 0x10 0x02      ; LDR r1 x
-0xD2 0x20 0x03      ; LDR r2 y
+0xD3 0x10 0x02      ; LDC r1 x
+0xD2 0x11           ; LDM r1 r1
+0xD3 0x20 0x03      ; LDC r2 y
+0xD2 0x22           ; LDM r2 r2
 0xD0 0x30           ; MOV r3 r0
-0xB0 0x15           ; JMP check
+0xB0 0x19           ; JMP check
 0xA1 0x20           ; DEC r2            <-- loop
 0xA4 0x31           ; ADD r3 r1
 0xA8 0x20           ; CMP r2 r0         <-- check
-0xB2 0x11           ; JGT loop
-0xD1 0x30 0xFF      ; STR r3 0xFF
+0xB2 0x15           ; JGT loop
+0xD3 0x40 0xFF      ; LDC r4 0xFF
+0xD1 0x34           ; STM r3 r4
 0xFF                ; END
 
 
 == Compiled ==
 
-B0 04 06 09 D3 00 00 D2 10 02 D2 20 03 D0 30 B0 15 A1 20 A4 31 A8 20 B2 11 D1 30 FF FF
+B0 04 06 09 D3 00 00 D3 10 02 D2 11 D3 20 03 D2 22 D0 30 B0 19 A1 20 A4 31 A8 20 B2 15 D3 30 FF D1 34 FF
 
+
+== Possible Implementation uOps ==
+
+NOP (4):
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    DECODE
+    
+MOV (8):
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    DECODE
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    rB => rA
+    
+LDC (10):
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    DECODE
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => rA
+    
+LDM (10):
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    DECODE
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    rB => MAR
+    M[MAR] => MDR
+    MDR => rA
+    
+STM (10):
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    DECODE
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    rB => MAR
+    rA => MDR
+    MDR => M[MAR]
+    
+INC (8):
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    DECODE
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    rA + 1 => rA
+    
+DEC (8):
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    DECODE
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    rA - 1 => rA
+    
+NEG (8):
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    DECODE
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    -rA => rA
+    
+BCM (8):
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    DECODE
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    ~rA => rA
+    
+USR (8):
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    DECODE
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    rA >> 1 (ZE) => rA
+    
+SSR (8):
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    DECODE
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    rA >> 1 (SE) => rA
+    
+USL (8):
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    DECODE
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    rA << 1 => rA
+    
+ADD (8):
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    DECODE
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    rA + rB => rA
+    
+SUB (8):
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    DECODE
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    rA - rB => rA
+    
+AND (8):
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    DECODE
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    rA & rB => rA
+    
+OR (8):
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    DECODE
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    rA | rB => rA
+    
+CMP (8):
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    DECODE
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    rA - rB
+    
+JMP (7):
+    PC => MAR
+    PC + 1 => PC; M[MAR] => MDR
+    MDR => IR
+    DECODE
+    PC => MAR
+    M[MAR] => MDR
+    MDR => PC
+    
